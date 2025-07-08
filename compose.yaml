@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: .
+    container_name: revai-backend-app
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./app:/app/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/revaidb
+
+  db:
+    image: postgres:15-alpine
+    container_name: revai-postgres-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=revaidb
+    ports:
+      - "5433:5432"
+
+volumes:
+  postgres_data:
