@@ -6,6 +6,7 @@ services:
       - "8001:8000"
     volumes:
       - ./app:/app/app
+      - ./app/static/images:/app/app/static/images/
     depends_on:
       - db
     environment:

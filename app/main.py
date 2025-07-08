@@ -1,18 +1,16 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from psycopg2.extras import RealDictCursor
-from pydantic_settings import BaseSettings
 import numpy as np
-import psycopg2
 import tensorflow as tf
 
-from typing import List, Union
+from typing import List
 import os
-import time
 
 from app.prediction.architecture import ErrorF1Score
-
+from app.db.database import engine
+from app.features.users import models
 
 app = FastAPI()
 
@@ -23,6 +21,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+models.Base.metadata.create_all(bind=engine)
+os.makedirs("app/static/images", exist_ok=True)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 
 OPTIMAL_THRESHOLDS = np.array([0.4, 0.45, 0.45, 0.35, 0.4, 0.45])
 
@@ -50,64 +53,9 @@ class PoseSequence(BaseModel):
     list_landmarks: List[List[float]]
 
 
-class DbStatus(BaseModel):
-    status: str
-    db_version: Union[str, None] = None
-
-
-class Settings(BaseSettings):
-    database_url: str
-
-    class Config:
-        env_file = ".env"
-
-
-settings = Settings()
-
-
-def get_db_connect():
-    while True:
-        try:
-            conn = psycopg2.connect(
-                settings.database_url, cursor_factory=RealDictCursor
-            )
-            print("SUCCESS: Database connection established.")
-            return conn
-        except Exception as error:
-            print("FAILED: Database connection failed.")
-            print(f"ERROR: {error}")
-            time.sleep(2)
-
-
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to RevAItalize API"}
-
-
-@app.get("/api/db-check", response_model=DbStatus)
-def db_check():
-    """
-    A simple endpoint to check database connection
-    """
-
-    try:
-        conn = get_db_connect()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT version()")
-        db_version_row = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
-        db_version_string = db_version_row["version"] if db_version_row else "unknown"
-
-        return {"status": "ok", "db_version": db_version_string}
-    except Exception as error:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database connection error: {error}",
-        )
+def health_check():
+    return {"message": "API is running well"}
 
 
 @app.post("/api/predict/")
@@ -122,3 +70,8 @@ def index(landmarks: PoseSequence):
     binary_pred = (raw_pred >= OPTIMAL_THRESHOLDS).astype(int)
 
     return {"prediction": binary_pred.tolist()}
+
+
+from app.features.users.routes import router as users_router
+
+app.include_router(users_router)
