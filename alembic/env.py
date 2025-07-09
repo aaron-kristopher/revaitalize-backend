@@ -9,7 +9,25 @@ from dotenv import load_dotenv
 
 from app.db.base import Settings
 from app.db.database import Base
+from app.features.users.models import User, UserProblem, Onboarding
+from app.features.exercises.models import Exercise
+from app.features.sessions.models import (
+    Session,
+    SessionRequirement,
+    ExerciseSet,
+    Repetition,
+)
 
+models = [
+    User,
+    UserProblem,
+    Onboarding,
+    Exercise,
+    Session,
+    SessionRequirement,
+    ExerciseSet,
+    Repetition,
+]
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
