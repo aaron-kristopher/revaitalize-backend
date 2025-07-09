@@ -5,8 +5,28 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from app.features.users.routes import router as users_router
+from app.features.exercises.routes import router as exercise_router
 from app.prediction.routes import router as prediction_router
 from app.db.database import Base, engine
+from app.features.users.models import User, UserProblem, Onboarding
+from app.features.exercises.models import Exercise
+from app.features.sessions.models import (
+    Session,
+    SessionRequirement,
+    ExerciseSet,
+    Repetition,
+)
+
+_ = [
+    User,
+    UserProblem,
+    Onboarding,
+    Exercise,
+    Session,
+    SessionRequirement,
+    ExerciseSet,
+    Repetition,
+]
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -19,7 +39,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-routers = [users_router, prediction_router]
+routers = [users_router, prediction_router, exercise_router]
 
 os.makedirs("app/static/images", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

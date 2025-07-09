@@ -187,7 +187,7 @@ def update_user_onboarding(
 def delete_user_onboarding(user_id: int, db: Session = Depends(get_db)):
     db_user_onboarding = crud.delete_user_onboarding(db=db, user_id=user_id)
 
-    if not db_user_onboarding
+    if not db_user_onboarding:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail=f"User with id {user_id} either does not exist or does not have any onboarding information yet."

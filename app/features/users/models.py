@@ -55,3 +55,4 @@ class UserProblem(Base):
         Integer, ForeignKey("exercises.id"), nullable=False, index=True
     )
     user = relationship("User", back_populates="user_problem")
+    exercise = relationship("Exercise", back_populates="user_problem")

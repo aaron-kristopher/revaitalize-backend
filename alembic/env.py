@@ -7,8 +7,7 @@ from alembic import context
 
 from dotenv import load_dotenv
 
-from app.db.base import Settings
-from app.db.database import Base
+from app.db.base import Settings, Base
 from app.features.users.models import User, UserProblem, Onboarding
 from app.features.exercises.models import Exercise
 from app.features.sessions.models import (
@@ -18,7 +17,7 @@ from app.features.sessions.models import (
     Repetition,
 )
 
-models = [
+_ = [
     User,
     UserProblem,
     Onboarding,
