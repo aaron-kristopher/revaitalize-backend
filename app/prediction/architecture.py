@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from typing import List
+import os
 
 
 @tf.keras.utils.register_keras_serializable()
@@ -24,5 +24,15 @@ class ErrorF1Score(tf.keras.metrics.Metric):
         self.recall.reset_state()
 
 
-class PoseSequence(List):
-    pass
+try:
+    custom_objects = {"error_f1": ErrorF1Score}
+    model = tf.keras.models.load_model(
+        "models/run_13.keras",
+        custom_objects=custom_objects,
+    )
+    os.system("clear")
+    print("LSTM model loaded successfully!")
+except Exception as e:
+    os.system("clear")
+    print(f"Error loading model: {e}")
+    model = None
