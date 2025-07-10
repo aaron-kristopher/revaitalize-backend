@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
+from datetime import datetime, timezone, timedelta
+from sqlalchemy.orm import Session, selectinload
 from . import models, schemas
 
 # ==================================
@@ -100,13 +100,19 @@ def create_session(db: Session, user_id: int, exercise_id: int):
 
 def get_session(db: Session, session_id: int):
     """Fetches a single session by its ID, including its sets and reps."""
-    return db.query(models.Session).filter(models.Session.id == session_id).first()
+    return (
+        db.query(models.Session)
+        .options(selectinload(models.Session.exercise_sets))
+        .filter(models.Session.id == session_id)
+        .first()
+    )
 
 
 def get_user_sessions(db: Session, user_id: int, skip: int = 0, limit: int = 100):
     """Fetches all sessions for a specific user."""
     return (
         db.query(models.Session)
+        .options(selectinload(models.Session.exercise_sets))
         .filter(models.Session.user_id == user_id)
         .offset(skip)
         .limit(limit)
@@ -134,6 +140,57 @@ def update_session(db: Session, session_id: int, session_update: schemas.Session
     return db_session
 
 
+def get_sessions_by_date_range(
+    db: Session, user_id: int, start: datetime, end: datetime
+):
+    return (
+        db.query(models.Session)
+        .options(selectinload(models.Session.exercise_sets))
+        .filter(
+            models.Session.user_id == user_id,
+            models.Session.datetime_start >= start,
+            models.Session.datetime_start < end,
+        )
+        .all()
+    )
+
+
+def get_sessions_today(db: Session, user_id: int):
+    now = datetime.now(timezone.utc)
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+    return get_sessions_by_date_range(db, user_id, start, end)
+
+
+def get_sessions_yesterday(db: Session, user_id: int):
+    now = datetime.now(timezone.utc)
+    end = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start = end - timedelta(days=1)
+    return get_sessions_by_date_range(db, user_id, start, end)
+
+
+def get_sessions_this_week(db: Session, user_id: int):
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(days=now.weekday())  # Monday
+    start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=7)
+    return get_sessions_by_date_range(db, user_id, start, end)
+
+
+def get_sessions_this_month(db: Session, user_id: int):
+    now = datetime.now(timezone.utc)
+    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if now.month == 12:
+        end = now.replace(
+            year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+    else:
+        end = now.replace(
+            month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+    return get_sessions_by_date_range(db, user_id, start, end)
+
+
 # ==================================
 #        EXERCISE SET CRUD
 # ==================================
@@ -152,7 +209,12 @@ def create_exercise_set(
 
 def get_exercise_set(db: Session, set_id: int):
     """Fetches a single set by its ID."""
-    return db.query(models.ExerciseSet).filter(models.ExerciseSet.id == set_id).first()
+    return (
+        db.query(models.ExerciseSet)
+        .options(selectinload(models.ExerciseSet.repetitions))
+        .filter(models.ExerciseSet.id == set_id)
+        .first()
+    )
 
 
 def update_exercise_set(
@@ -190,6 +252,17 @@ def create_repetition(db: Session, rep_create: schemas.RepetitionCreate, set_id:
     db.commit()
     db.refresh(db_rep)
     return db_rep
+
+
+def get_single_repetition(db: Session, set_id: int, repetition_id: int):
+    """Fetches one repetition for a specific set."""
+    return (
+        db.query(models.Repetition)
+        .filter(
+            models.Repetition.set_id == set_id, models.Repetition.id == repetition_id
+        )
+        .first()
+    )
 
 
 def get_set_repetitions(db: Session, set_id: int):

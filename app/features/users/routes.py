@@ -41,6 +41,15 @@ def get_all_users_route(skip: int = 0, limit: int = 100, db: Session = Depends(g
     return users
 
 
+@router.get("/{user_id}", response_model=schemas.UserOut)
+def get_user_by_id_route(user_id: int, db: Session = Depends(get_db)):
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return db_user
+
 @router.get("/{email}", response_model=schemas.UserOut)
 def get_user_by_email(email: str, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db=db, email=email)
@@ -52,16 +61,6 @@ def get_user_by_email(email: str, db: Session = Depends(get_db)):
         )
 
     return user
-
-
-@router.get("/{user_id}", response_model=schemas.UserOut)
-def get_user_by_id_route(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    return db_user
 
 
 @router.put("/{user_id}", response_model=schemas.UserOut)

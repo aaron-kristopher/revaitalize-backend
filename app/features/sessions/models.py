@@ -25,7 +25,7 @@ class Session(Base):
 
     user = relationship("User", back_populates="sessions")
     exercise = relationship("Exercise", back_populates="session")
-    exercise_set = relationship(
+    exercise_sets = relationship(
         "ExerciseSet", back_populates="session", cascade="all, delete-orphan"
     )
 
@@ -57,8 +57,8 @@ class ExerciseSet(Base):
 
     session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False, index=True)
 
-    session = relationship("Session", back_populates="exercise_set")
-    repetition = relationship(
+    session = relationship("Session", back_populates="exercise_sets")
+    repetitions = relationship(
         "Repetition", back_populates="exercise_set", cascade="all, delete-orphan"
     )
 
@@ -74,4 +74,4 @@ class Repetition(Base):
 
     set_id = Column(Integer, ForeignKey("exercise_sets.id"), nullable=False, index=True)
 
-    exercise_set = relationship("ExerciseSet", back_populates="repetition")
+    exercise_set = relationship("ExerciseSet", back_populates="repetitions")

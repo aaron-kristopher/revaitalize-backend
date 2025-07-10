@@ -75,6 +75,7 @@ class ExerciseSetOut(ExerciseSetBase):
     set_quality_score: Optional[float] = None
     is_completed: Optional[bool] = None
     error_flag: Optional[str] = None
+    repetitions: List[RepetitionOut] = []
 
     class Config:
         from_attributes = True
@@ -111,9 +112,7 @@ class SessionOut(BaseModel):
     is_completed: Optional[bool] = None
     session_quality_score: Optional[float] = None
     error_flag: Optional[str] = None
-    sets: List[ExerciseSetOut] = (
-        []
-    )  # Nests the set data, which in turn nests the repetition data
+    exercise_sets: List[ExerciseSetOut] = []
 
     class Config:
         from_attributes = True
