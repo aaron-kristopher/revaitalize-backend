@@ -33,15 +33,26 @@ _ = [
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
+origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+print("Registering CORS middleware...")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-routers = [auth_router,users_router, prediction_router, exercise_router, session_router]
+
+routers = [
+    auth_router,
+    users_router,
+    prediction_router,
+    exercise_router,
+    session_router,
+]
 
 os.makedirs("app/static/images", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

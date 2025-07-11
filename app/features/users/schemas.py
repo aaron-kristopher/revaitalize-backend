@@ -1,6 +1,20 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 
+
+# --- Forward declaration to handle circular dependencies ---
+# We will define the full OnboardingOut in a separate file later
+class OnboardingOut(BaseModel):
+    id: int
+    user_id: int
+    primary_goal: str
+    pain_score: int
+    preferred_schedule: int
+
+    class Config:
+        from_attributes = True
+
+
 # --- User Schemas ---
 
 
@@ -32,12 +46,16 @@ class UserOut(BaseModel):
     age: int
     address: str
     profile_picture_url: Optional[str] = None
+    # --- ADDED THIS LINE ---
+    # This will automatically pull in the related onboarding data when a User is fetched
+    onboarding_data: Optional[OnboardingOut] = None
 
     class Config:
         from_attributes = True  # Formerly orm_mode = True
 
 
 # --- Onboarding Schemas ---
+# Note: In a larger app, these would be in a separate `onboarding/schemas.py`
 class OnboardingBase(BaseModel):
     primary_goal: str
     pain_score: int
@@ -54,12 +72,13 @@ class OnboardingUpdate(BaseModel):
     preferred_schedule: Optional[int] = None
 
 
-class OnboardingOut(OnboardingBase):
-    id: int
-    user_id: int
-
-    class Config:
-        from_attributes = True
+# This definition is now also at the top for the forward reference
+# class OnboardingOut(OnboardingBase):
+#     id: int
+#     user_id: int
+#
+#     class Config:
+#         from_attributes = True
 
 
 # --- UserProblem Schemas ---

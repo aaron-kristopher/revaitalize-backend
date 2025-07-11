@@ -15,6 +15,7 @@ import os
 
 from app.db.database import get_db
 from . import crud, schemas
+from app.features.exercises import crud as exercises_crud
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -50,18 +51,6 @@ def get_user_by_id_route(user_id: int, db: Session = Depends(get_db)):
         )
     return db_user
 
-@router.get("/{email}", response_model=schemas.UserOut)
-def get_user_by_email(email: str, db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db=db, email=email)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with email {email} not found.",
-        )
-
-    return user
-
 
 @router.put("/{user_id}", response_model=schemas.UserOut)
 def update_user_route(
@@ -94,21 +83,14 @@ def delete_user_route(user_id: int, db: Session = Depends(get_db)):
 def upload_profile_picture_route(
     user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
 ):
-    # First, check if user exists
     user = crud.get_user(db, user_id=user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    # Define file path and save the file
     file_ext = file.filename.split(".")[-1]
     filename = f"user_{user_id}_profile.{file_ext}"
-
-    # The path should be relative to the static directory mount point
-    # We mount `/static` to the `app/static` folder in main.py
-    # So the URL will be `/static/images/{filename}`
-    # The physical path is `app/static/images/{filename}`
     static_file_path = f"app/static/images/{filename}"
     url_path = f"/static/images/{filename}"
 
@@ -116,7 +98,6 @@ def upload_profile_picture_route(
     with open(static_file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Update user in the database with the URL path
     return crud.update_user_profile_picture(db, user_id=user_id, file_path=url_path)
 
 
@@ -167,8 +148,6 @@ def update_user_onboarding(
     onboarding_update: schemas.OnboardingUpdate,
     db: Session = Depends(get_db),
 ):
-    db_user_onboarding = crud.get_user_onbaording(db=db, user_id=user_id)
-
     updated_user_onboarding = crud.update_user_onboarding(
         db=db, user_id=user_id, onboarding_update=onboarding_update
     )
@@ -188,8 +167,8 @@ def delete_user_onboarding(user_id: int, db: Session = Depends(get_db)):
 
     if not db_user_onboarding:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"User with id {user_id} either does not exist or does not have any onboarding information yet."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} either does not exist or does not have any onboarding information yet.",
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -203,30 +182,56 @@ def delete_user_onboarding(user_id: int, db: Session = Depends(get_db)):
 def create_problem_for_user_route(
     user_id: int, problem: schemas.UserProblemCreate, db: Session = Depends(get_db)
 ):
-    # Check if user exists
     db_user = crud.get_user(db=db, user_id=user_id)
     if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
-    return crud.create_user_problem(db=db, problem=problem, user_id=user_id)
+    # --- FIX IS HERE ---
+    # Convert the frontend identifier (e.g., "hiding_face")
+    # to the database format (e.g., "Hiding Face")
+    exercise_name_db_format = problem.problem_area.replace("_", " ").title()
+
+    # Find the exercise by its formatted name
+    db_exercise = exercises_crud.get_exercise_by_name(db, name=exercise_name_db_format)
+    if not db_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Exercise with name '{exercise_name_db_format}' not found.",
+        )
+
+    # Pass the found exercise_id to the CRUD function
+    return crud.create_user_problem(
+        db=db, problem=problem, user_id=user_id, exercise_id=db_exercise.id
+    )
 
 
 @router.get("/{user_id}/problems", response_model=List[schemas.UserProblemOut])
 def get_problems_for_user_route(user_id: int, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, user_id=user_id)
     if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     return crud.get_user_problems(db=db, user_id=user_id)
 
-@router.put("/{user_id}/problems", response_model=schemas.UserProblemOut)
-def update_problem_for_user(user_id: int, user_problem_update: schemas.UserProblemUpdate, db: Session = Depends(get_db)):
 
-    user_problem = crud.update_user_problem(db=db, user_id=user_id, user_problem_update=user_problem_update)
+@router.put("/{user_id}/problems", response_model=schemas.UserProblemOut)
+def update_problem_for_user(
+    user_id: int,
+    user_problem_update: schemas.UserProblemUpdate,
+    db: Session = Depends(get_db),
+):
+    user_problem = crud.update_user_problem(
+        db=db, user_id=user_id, user_problem_update=user_problem_update
+    )
 
     if not user_problem:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                            detail=f"User with id {id} either does not exist or does not have any Problem Area information yet."
-                            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} either does not exist or does not have any Problem Area information yet.",
+        )
 
     return user_problem

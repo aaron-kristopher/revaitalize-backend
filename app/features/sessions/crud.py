@@ -29,7 +29,6 @@ def create_session_requirement(
     db: Session, requirement: schemas.SessionRequirementCreate, user_id: int
 ):
     """Creates a new SessionRequirement for a user and exercise."""
-    # Check for existing requirement for the same user and exercise to avoid duplicates
     existing_req = (
         db.query(models.SessionRequirement)
         .filter(
@@ -38,9 +37,8 @@ def create_session_requirement(
         )
         .first()
     )
-
     if existing_req:
-        return None  # Return None to indicate a conflict/duplicate
+        return None
 
     db_req = models.SessionRequirement(
         number_of_reps=requirement.number_of_reps,
@@ -62,12 +60,10 @@ def update_session_requirement(
     """Updates the reps or sets for an existing session requirement."""
     db_req = get_session_requirement(db, requirement_id=requirement_id)
     if not db_req:
-        return None  # Not found
-
+        return None
     update_data = requirement_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_req, key, value)
-
     db.commit()
     db.refresh(db_req)
     return db_req
@@ -78,7 +74,6 @@ def delete_session_requirement(db: Session, requirement_id: int):
     db_req = get_session_requirement(db, requirement_id=requirement_id)
     if not db_req:
         return None
-
     db.delete(db_req)
     db.commit()
     return db_req
@@ -102,7 +97,7 @@ def get_session(db: Session, session_id: int):
     """Fetches a single session by its ID, including its sets and reps."""
     return (
         db.query(models.Session)
-        .options(selectinload(models.Session.exercise_sets))
+        .options(selectinload(models.Session.exercise_sets).selectinload(models.ExerciseSet.repetitions))
         .filter(models.Session.id == session_id)
         .first()
     )
@@ -119,24 +114,30 @@ def get_user_sessions(db: Session, user_id: int, skip: int = 0, limit: int = 100
         .all()
     )
 
-
+# --- REFACTORED FUNCTION ---
 def update_session(db: Session, session_id: int, session_update: schemas.SessionUpdate):
     """Updates a session, typically called when a session ends."""
-    db_session = get_session(db, session_id=session_id)
+    
+    # Step 1: Fetch the session directly from the database.
+    db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
+
+    # Step 2: If it's not found, return None immediately. This is the source of the 404.
     if not db_session:
         return None
 
+    # Step 3: Apply the updates from the Pydantic model.
     update_data = session_update.model_dump(exclude_unset=True)
-
     for key, value in update_data.items():
         setattr(db_session, key, value)
 
-    # Also set the end time when marking as complete
+    # Step 4: Explicitly set the end time if marking as complete.
     if session_update.is_completed:
         db_session.datetime_end = datetime.now(timezone.utc)
 
+    # Step 5: Commit the changes and refresh the object to get the updated state.
     db.commit()
     db.refresh(db_session)
+    
     return db_session
 
 
@@ -171,7 +172,7 @@ def get_sessions_yesterday(db: Session, user_id: int):
 
 def get_sessions_this_week(db: Session, user_id: int):
     now = datetime.now(timezone.utc)
-    start = now - timedelta(days=now.weekday())  # Monday
+    start = now - timedelta(days=now.weekday())
     start = start.replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=7)
     return get_sessions_by_date_range(db, user_id, start, end)
@@ -181,13 +182,9 @@ def get_sessions_this_month(db: Session, user_id: int):
     now = datetime.now(timezone.utc)
     start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     if now.month == 12:
-        end = now.replace(
-            year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0
-        )
+        end = now.replace(year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     else:
-        end = now.replace(
-            month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0
-        )
+        end = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
     return get_sessions_by_date_range(db, user_id, start, end)
 
 
@@ -224,11 +221,9 @@ def update_exercise_set(
     db_set = get_exercise_set(db, set_id=set_id)
     if not db_set:
         return None
-
     update_data = set_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_set, key, value)
-
     db.commit()
     db.refresh(db_set)
     return db_set
@@ -246,7 +241,7 @@ def create_repetition(db: Session, rep_create: schemas.RepetitionCreate, set_id:
         rep_number=rep_create.rep_number,
         rep_quality_score=rep_create.rep_quality_score,
         error_flag=rep_create.error_flag,
-        is_completed=True,  # A repetition is complete by definition when it's logged
+        is_completed=True,
     )
     db.add(db_rep)
     db.commit()
