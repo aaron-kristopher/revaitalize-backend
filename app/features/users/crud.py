@@ -6,6 +6,7 @@ from app.security import hash_password
 #         USER CRUD Functions
 # ==================================
 
+
 def get_user(db: Session, user_id: int):
     """Fetches a single user by their ID, eagerly loading their onboarding data."""
     return (
@@ -47,6 +48,8 @@ def create_user(db: Session, user: schemas.UserCreate):
         hashed_password=hashed_pass,
         age=user.age,
         address=user.address,
+        sex=user.sex,
+        contact_number=user.contact_number,
     )
     db.add(db_user)
     db.commit()
@@ -91,6 +94,7 @@ def delete_user(db: Session, user_id: int):
 # ==================================
 #       ONBOARDING CRUD Functions
 # ==================================
+
 
 def create_user_onboarding(
     db: Session, onboarding: schemas.OnboardingCreate, user_id: int
@@ -140,13 +144,14 @@ def delete_user_onboarding(db: Session, user_id: int):
 #     USER PROBLEM CRUD Functions
 # ==================================
 
+
 # --- FIX IS HERE ---
-def create_user_problem(db: Session, problem: schemas.UserProblemCreate, user_id: int, exercise_id: int):
+def create_user_problem(
+    db: Session, problem: schemas.UserProblemCreate, user_id: int, exercise_id: int
+):
     # Now includes exercise_id
     db_problem = models.UserProblem(
-        **problem.model_dump(),
-        user_id=user_id,
-        exercise_id=exercise_id
+        **problem.model_dump(), user_id=user_id, exercise_id=exercise_id
     )
     db.add(db_problem)
     db.commit()
