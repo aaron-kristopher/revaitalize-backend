@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Literal, Union
 from pydantic import BaseModel
 
 
@@ -7,8 +7,17 @@ class PoseSequence(BaseModel):
     exercise_name: str
 
 
-class DatasetBase(BaseModel):
+class ConfigPayload(BaseModel):
     filename: str
     exercise: str
-    positions: Dict[str, Dict[str, List[float]]]
-    is_incorrect: bool
+    category: str
+
+
+class FramePayload(BaseModel):
+    timestamp: str
+    landmarks: Dict[str, List[float]]
+
+
+class WebsocketMessage(BaseModel):
+    event: Literal["config", "frame", "end"]
+    payload: Union[ConfigPayload, FramePayload, Dict]
