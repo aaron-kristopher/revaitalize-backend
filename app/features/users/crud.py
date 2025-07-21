@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session, selectinload
 from . import models, schemas
-from app.security import hash_password
 
 # ==================================
 #         USER CRUD Functions
@@ -38,19 +37,19 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     )
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: schemas.UserCreate, hashed_password: str):
     """Creates a new user with a hashed password."""
-    hashed_pass = hash_password(user.password)
     db_user = models.User(
         first_name=user.first_name,
         last_name=user.last_name,
         email=user.email,
-        hashed_password=hashed_pass,
+        hashed_password=hashed_password,
         age=user.age,
         address=user.address,
         sex=user.sex,
         contact_number=user.contact_number,
     )
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

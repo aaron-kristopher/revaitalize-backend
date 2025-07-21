@@ -10,25 +10,17 @@ from app.features.sessions.routes import router as session_router
 from app.prediction.routes import router as prediction_router
 from app.auth_routes import router as auth_router
 from app.db.database import Base, engine
-from app.features.users.models import User, UserProblem, Onboarding
-from app.features.exercises.models import Exercise
-from app.features.sessions.models import (
-    Session,
-    SessionRequirement,
-    ExerciseSet,
-    Repetition,
-)
 
-_ = [
-    User,
-    UserProblem,
-    Onboarding,
-    Exercise,
-    Session,
-    SessionRequirement,
-    ExerciseSet,
-    Repetition,
-]
+# _ = [
+#     User,
+#     UserProblem,
+#     Onboarding,
+#     Exercise,
+#     Session,
+#     SessionRequirement,
+#     ExerciseSet,
+#     Repetition,
+# ]
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)

@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import os
+from typing import Union
 
 
 @tf.keras.utils.register_keras_serializable()
@@ -26,7 +27,7 @@ class ErrorF1Score(tf.keras.metrics.Metric):
 
 try:
     custom_objects = {"error_f1": ErrorF1Score}
-    model: tf.keras.Model = tf.keras.models.load_model(
+    model: Union[tf.keras.Model, None] = tf.keras.models.load_model(
         "models/run_13.keras",
         custom_objects=custom_objects,
     )

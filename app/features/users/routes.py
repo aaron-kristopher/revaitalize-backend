@@ -14,6 +14,7 @@ import os
 
 
 from app.db.database import get_db
+from app.security import get_current_active_user, hash_password
 from . import crud, schemas
 from app.features.exercises import crud as exercises_crud
 
@@ -33,13 +34,25 @@ def create_user_route(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
         )
-    return crud.create_user(db=db, user=user)
+
+    hashed_password: str = hash_password(user.password)
+    return crud.create_user(db=db, user=user, hashed_password=hashed_password)
 
 
 @router.get("/all", response_model=List[schemas.UserOut])
 def get_all_users_route(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
+
+
+@router.get("/me", response_model=schemas.UserOut)
+async def read_users_me(
+    current_user: schemas.UserOut = Depends(get_current_active_user),
+):
+    """
+    Fetch the currently authenticated uesr based on their JWT
+    """
+    return current_user
 
 
 @router.get("/{user_id}", response_model=schemas.UserOut)
