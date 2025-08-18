@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session, selectinload
 from . import models, schemas
+from zoneinfo import ZoneInfo
 
 # ==================================
 #    SESSION REQUIREMENT CRUD
@@ -132,7 +133,7 @@ def update_session(db: Session, session_id: int, session_update: schemas.Session
 
     # Step 4: Explicitly set the end time if marking as complete.
     if session_update.is_completed:
-        db_session.datetime_end = datetime.now(timezone.utc)
+        db_session.datetime_end = datetime.now(ZoneInfo("Asia/Manila"))
 
     # Step 5: Commit the changes and refresh the object to get the updated state.
     db.commit()
@@ -155,6 +156,16 @@ def get_sessions_by_date_range(
         .all()
     )
 
+def get_session_by_id(db: Session, user_id: int, session_id: int):
+    return (
+        db.query(models.Session)
+        .options(selectinload(models.Session.exercise_sets))
+        .filter(
+            models.Session.id == session_id,
+            models.Session.user_id == user_id,
+        )
+        .first()
+    )
 
 def get_sessions_today(db: Session, user_id: int):
     now = datetime.now(timezone.utc)

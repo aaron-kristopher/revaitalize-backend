@@ -211,6 +211,28 @@ def get_user_sessions_by_time_range(
         )
 
 
+@router.get(
+    "/{user_id}/sessions/{session_id}/detail", response_model=schemas.SessionOut
+)
+def get_session_by_id(user_id: int, session_id: int, db: Session = Depends(get_db)):
+    db_user = users_crud.get_user(db=db, user_id=user_id)
+
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    db_session = crud.get_session_by_id(db=db, user_id=user_id, session_id=session_id)
+
+    if not db_session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session with id {session_id} does not exist",
+        )
+
+    return db_session
+
+
 # ==================================
 #       EXERCISE SET Routes
 # ==================================
@@ -279,7 +301,6 @@ def get_exercise_set(
 def update_exercise_set_details(
     set_id: int,
     user_id: int,
-    session_id: int,
     set_update: schemas.ExerciseSetUpdate,
     db: Session = Depends(get_db),
 ):
@@ -291,8 +312,6 @@ def update_exercise_set_details(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-
-    db_session = crud.get_session(db=db, session_id=session_id)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
