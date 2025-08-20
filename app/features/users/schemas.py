@@ -93,3 +93,8 @@ class UserProblemOut(UserProblemBase):
 
 class UserProblemUpdate(BaseModel):
     problem_area: Optional[str] = None
+
+
+class ChangePasswordPayload(BaseModel):
+    current_password: str
+    new_password: str

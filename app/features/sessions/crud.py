@@ -147,7 +147,10 @@ def get_sessions_by_date_range(
 ):
     return (
         db.query(models.Session)
-        .options(selectinload(models.Session.exercise_sets))
+        .options(
+            selectinload(models.Session.exercise_sets)
+            .selectinload(models.ExerciseSet.repetitions)
+        )
         .filter(
             models.Session.user_id == user_id,
             models.Session.datetime_start >= start,
@@ -198,6 +201,17 @@ def get_sessions_this_month(db: Session, user_id: int):
     else:
         end = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
     return get_sessions_by_date_range(db, user_id, start, end)
+
+def get_all_sessions(db: Session, user_id: int):
+    return (
+        db.query(models.Session)
+        .options(
+            selectinload(models.Session.exercise_sets)
+            .selectinload(models.ExerciseSet.repetitions)
+        )
+        .filter(models.Session.user_id == user_id, models.Session.is_completed == True)
+        .all()
+    )
 
 
 # ==================================

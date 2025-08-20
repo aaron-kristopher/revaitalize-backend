@@ -178,6 +178,7 @@ class SessionTimeFilter(str, Enum):
     yesterday = "yesterday"
     this_week = "this_week"
     this_month = "this_month"
+    all_time = "all_time"
 
 
 @router.get(
@@ -205,6 +206,8 @@ def get_user_sessions_by_time_range(
         return crud.get_sessions_this_week(db, user_id)
     elif time_filter == SessionTimeFilter.this_month:
         return crud.get_sessions_this_month(db, user_id)
+    elif time_filter == SessionTimeFilter.all_time:
+        return crud.get_all_sessions(db, user_id)
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid time filter"
