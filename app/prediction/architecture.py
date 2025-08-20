@@ -28,11 +28,14 @@ class ErrorF1Score(tf.keras.metrics.Metric):
 try:
     custom_objects = {"error_f1": ErrorF1Score}
     model: Union[tf.keras.Model, None] = tf.keras.models.load_model(
-        "models/run_13.keras",
+        "models/finetuned_model.keras",
         custom_objects=custom_objects,
     )
     os.system("clear")
-    print("LSTM model loaded successfully!")
+    if model:
+        print("LSTM model loaded successfully!")
+    else:
+        print("Model empty")
 except Exception as e:
     os.system("clear")
     print(f"Error loading model: {e}")

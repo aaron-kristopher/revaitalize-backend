@@ -51,6 +51,11 @@ def get_prediction(sequence: PoseSequence):
         sequence.list_landmarks, dtype="float32"
     ).reshape(1, 20, 42)
 
+    if model:
+        print("Model loaded")
+    else:
+        print("Model empty")
+
     raw_pred: NDArray = model.predict(np_landmarks)
     binary_pred: NDArray = (raw_pred >= threshold).astype(int)
     return {"prediction": binary_pred.tolist()}
