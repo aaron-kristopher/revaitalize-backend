@@ -153,7 +153,6 @@ def get_sessions_by_date_range(
         )
         .filter(
             models.Session.user_id == user_id,
-             models.Session.is_completed == True,
             models.Session.datetime_start >= start,
             models.Session.datetime_start < end,
             models.Session.is_completed.is_(True)
@@ -210,8 +209,7 @@ def get_all_sessions(db: Session, user_id: int):
             selectinload(models.Session.exercise_sets)
             .selectinload(models.ExerciseSet.repetitions)
         )
-        .filter(models.Session.user_id == user_id)
-        .filter(models.Session.is_completed == True)
+        .filter(models.Session.user_id == user_id, models.Session.is_completed == True)
         .all()
     )
 
