@@ -87,7 +87,7 @@ def delete_session_requirement(db: Session, requirement_id: int):
 
 def create_session(db: Session, user_id: int, exercise_id: int):
     """Creates a new Session record, linking a user to an exercise."""
-    db_session = models.Session(user_id=user_id, exercise_id=exercise_id)
+    db_session = models.Session(user_id=user_id, exercise_id=exercise_id, datetime_start=datetime.now(ZoneInfo("Asia/Manila")))
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -152,6 +152,7 @@ def get_sessions_by_date_range(
             models.Session.user_id == user_id,
             models.Session.datetime_start >= start,
             models.Session.datetime_start < end,
+            models.Session.is_completed.is_(True)
         )
         .all()
     )
