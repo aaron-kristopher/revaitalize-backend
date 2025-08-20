@@ -176,3 +176,13 @@ def update_user_problem(
     db.commit()
     db.refresh(db_user_problem)
     return db_user_problem
+
+def update_user_password(db: Session, user_id: int, new_hashed_password: str):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        return None
+    
+    db_user.hashed_password = new_hashed_password
+    db.commit()
+    db.refresh(db_user)
+    return db_user

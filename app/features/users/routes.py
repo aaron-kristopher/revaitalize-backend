@@ -14,7 +14,7 @@ import os
 
 
 from app.db.database import get_db
-from app.security import get_current_active_user, hash_password
+from app.security import get_current_active_user, hash_password, verify_password
 from . import crud, schemas
 from app.features.exercises import crud as exercises_crud
 
@@ -248,3 +248,42 @@ def update_problem_for_user(
         )
 
     return user_problem
+
+
+@router.post(
+    "/{user_id}/change-password",
+    status_code=status.HTTP_200_OK
+)
+def change_user_password_route(
+    user_id: int,
+    passwords: schemas.ChangePasswordPayload,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserOut = Depends(get_current_active_user)
+):
+
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action."
+        )
+
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Verify password
+    if not verify_password(passwords.current_password, db_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect current password"
+        )
+        
+    # 2. Hash the new password
+    new_hashed_password = hash_password(passwords.new_password)
+    
+    # 3. Call the CRUD function to update it in the database
+    crud.update_user_password(db, user_id=user_id, new_hashed_password=new_hashed_password)
+    
+    return {"message": "Password changed successfully"}
