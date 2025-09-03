@@ -27,10 +27,16 @@ from app.prediction.schemas import (
 
 router = APIRouter(prefix="/predict", tags=["lstm"])
 
+# OPTIMAL_THRESHOLDS_DICT = {
+#     "hiding_face": np.array([0.4, 0.45, 0.45, 0.35, 0.4, 0.45]),
+#     "torso_rotation": np.array([0.35, 0.55, 0.35, 0.3, 0.45, 0.3]),
+#     "flank_stretch": np.array([0.5, 0.6, 0.55, 0.35, 0.35, 0.5]),
+# }
+
 OPTIMAL_THRESHOLDS_DICT = {
-    "hiding_face": np.array([0.4, 0.45, 0.45, 0.35, 0.4, 0.45]),
-    "torso_rotation": np.array([0.35, 0.55, 0.35, 0.3, 0.45, 0.3]),
-    "flank_stretch": np.array([0.5, 0.6, 0.55, 0.35, 0.35, 0.5]),
+    "hiding_face": np.array([0.3, 0.45, 0.45, 0.4, 0.5, 0.5]),
+    "torso_rotation": np.array([0.1, 0.35, 0.15, 0.5, 0.55, 0.6]),
+    "flank_stretch": np.array([0.45, 0.5, 0.5, 0.35, 0.4, 0.55]),
 }
 
 SESSION_DATA_CACHE: Dict[str, Dict] = {}
