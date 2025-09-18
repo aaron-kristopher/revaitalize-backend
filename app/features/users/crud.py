@@ -130,6 +130,37 @@ def update_user_onboarding(
     return db_user_onboarding
 
 
+def update_onboarding_custom_days(db: Session, user_id: int, days: list[int]):
+    """Validate and update onboarding.custom_allowed_days for a user.
+
+    - Ensures onboarding exists
+    - Ensures all days are in [0,6]
+    - Ensures len(days) matches preferred_schedule
+    - Stores sorted values
+    """
+    db_user_onboarding = get_user_onbaording(db=db, user_id=user_id)
+    if not db_user_onboarding:
+        return None, "Onboarding not found"
+
+    if any((not isinstance(d, int)) or d < 0 or d > 6 for d in days):
+        return None, "custom_allowed_days must contain integers in range 0–6"
+
+    if len(days) != db_user_onboarding.preferred_schedule:
+        return None, (
+            f"custom_allowed_days length ({len(days)}) must equal preferred_schedule "
+            f"({db_user_onboarding.preferred_schedule})"
+        )
+
+    # Optional: ensure distinct values
+    if len(set(days)) != len(days):
+        return None, "custom_allowed_days must not contain duplicates"
+
+    db_user_onboarding.custom_allowed_days = sorted(days)
+    db.commit()
+    db.refresh(db_user_onboarding)
+    return db_user_onboarding, None
+
+
 def delete_user_onboarding(db: Session, user_id: int):
     db_user_onboarding = get_user_onbaording(db=db, user_id=user_id)
     if not db_user_onboarding:
@@ -176,6 +207,7 @@ def update_user_problem(
     db.commit()
     db.refresh(db_user_problem)
     return db_user_problem
+
 
 def update_user_password(db: Session, user_id: int, new_hashed_password: str):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()

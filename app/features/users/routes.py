@@ -56,7 +56,16 @@ async def read_users_me(
 
 
 @router.get("/{user_id}", response_model=schemas.UserOut)
-def get_user_by_id_route(user_id: int, db: Session = Depends(get_db)):
+def get_user_by_id_route(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserOut = Depends(get_current_active_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action.",
+        )
     db_user = crud.get_user(db, user_id=user_id)
     if not db_user:
         raise HTTPException(
@@ -143,7 +152,12 @@ def create_onboarding_for_user_route(
 
 
 @router.get("/{user_id}/onboarding", response_model=schemas.OnboardingOut)
-def get_user_onboarding(user_id: int, db: Session = Depends(get_db)):
+def get_user_onboarding(user_id: int, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_active_user)):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action.",
+        )
     db_user_onboarding = crud.get_user_onbaording(db=db, user_id=user_id)
 
     if not db_user_onboarding:
@@ -172,6 +186,33 @@ def update_user_onboarding(
         )
 
     return updated_user_onboarding
+
+
+@router.put(
+    "/{user_id}/onboarding/custom-schedule-days",
+    response_model=schemas.OnboardingOut,
+)
+def update_custom_schedule_days_route(
+    user_id: int,
+    payload: schemas.UpdateCustomAllowedDaysRequest,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserOut = Depends(get_current_active_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action.",
+        )
+
+    onboarding, error = crud.update_onboarding_custom_days(
+        db=db, user_id=user_id, days=payload.custom_allowed_days
+    )
+    if error:
+        if error == "Onboarding not found":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return onboarding
 
 
 @router.delete("/{user_id}/onboarding")

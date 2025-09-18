@@ -1,5 +1,5 @@
-from typing import Optional
-from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 # --- Forward declaration to handle circular dependencies ---
@@ -9,6 +9,7 @@ class OnboardingOut(BaseModel):
     primary_goal: str
     pain_score: int
     preferred_schedule: int
+    custom_allowed_days: Optional[List[int]] = None
 
     class Config:
         from_attributes = True
@@ -72,6 +73,18 @@ class OnboardingUpdate(BaseModel):
     primary_goal: Optional[str] = None
     pain_score: Optional[int] = None
     preferred_schedule: Optional[int] = None
+
+
+class UpdateCustomAllowedDaysRequest(BaseModel):
+    custom_allowed_days: List[int]
+
+    @field_validator("custom_allowed_days")
+    @classmethod
+    def validate_days(cls, v: List[int]):
+        if any((not isinstance(d, int)) or d < 0 or d > 6 for d in v):
+            raise ValueError("custom_allowed_days must contain integers in range 0–6")
+        # Optionally sort for stable storage; duplicate handling is left to service layer
+        return sorted(v)
 
 
 # --- UserProblem Schemas ---
