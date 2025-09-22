@@ -1,5 +1,19 @@
-from typing import Optional
-from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr, field_validator
+
+
+# --- Forward declaration to handle circular dependencies ---
+class OnboardingOut(BaseModel):
+    id: int
+    user_id: int
+    primary_goal: str
+    pain_score: int
+    preferred_schedule: int
+    custom_allowed_days: Optional[List[int]] = None
+
+    class Config:
+        from_attributes = True
+
 
 # --- User Schemas ---
 
@@ -12,6 +26,8 @@ class UserCreate(BaseModel):
     password: str
     age: int
     address: str
+    sex: str
+    contact_number: str
 
 
 # Schema for data required to UPDATE a user
@@ -21,9 +37,10 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     age: Optional[int] = None
     address: Optional[str] = None
+    sex: Optional[str] = None
+    contact_number: Optional[str] = None
 
 
-# Schema for data returned FROM the API (never includes the password)
 class UserOut(BaseModel):
     id: int
     first_name: str
@@ -31,10 +48,14 @@ class UserOut(BaseModel):
     email: EmailStr
     age: int
     address: str
+    sex: str
+    contact_number: str
     profile_picture_url: Optional[str] = None
 
+    onboarding_data: Optional[OnboardingOut] = None
+
     class Config:
-        from_attributes = True  # Formerly orm_mode = True
+        from_attributes = True
 
 
 # --- Onboarding Schemas ---
@@ -54,12 +75,16 @@ class OnboardingUpdate(BaseModel):
     preferred_schedule: Optional[int] = None
 
 
-class OnboardingOut(OnboardingBase):
-    id: int
-    user_id: int
+class UpdateCustomAllowedDaysRequest(BaseModel):
+    custom_allowed_days: List[int]
 
-    class Config:
-        from_attributes = True
+    @field_validator("custom_allowed_days")
+    @classmethod
+    def validate_days(cls, v: List[int]):
+        if any((not isinstance(d, int)) or d < 0 or d > 6 for d in v):
+            raise ValueError("custom_allowed_days must contain integers in range 0–6")
+        # Optionally sort for stable storage; duplicate handling is left to service layer
+        return sorted(v)
 
 
 # --- UserProblem Schemas ---
@@ -81,3 +106,8 @@ class UserProblemOut(UserProblemBase):
 
 class UserProblemUpdate(BaseModel):
     problem_area: Optional[str] = None
+
+
+class ChangePasswordPayload(BaseModel):
+    current_password: str
+    new_password: str

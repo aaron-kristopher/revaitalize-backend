@@ -1,6 +1,3 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
-
 from app.db.database import Base
 
 from app.features.users.models import User, Onboarding, UserProblem
@@ -23,11 +20,3 @@ _ = [
     Exercise,
     Base,
 ]
-
-
-class Settings(BaseSettings):
-    database_url: str = Field(..., alias="DATABASE_URL")
-
-    class Config:
-        env_file = ".env"
-        extra = "allow"

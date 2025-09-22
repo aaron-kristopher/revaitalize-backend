@@ -7,7 +7,8 @@ from alembic import context
 
 from dotenv import load_dotenv
 
-from app.db.base import Settings, Base
+from app.db.database import Base
+from app.core.config import Settings
 from app.features.users.models import User, UserProblem, Onboarding
 from app.features.exercises.models import Exercise
 from app.features.sessions.models import (

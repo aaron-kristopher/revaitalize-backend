@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from app.db.database import Base
 
@@ -13,6 +14,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     age = Column(Integer, nullable=False)
+    sex = Column(String, nullable=False)
+    contact_number = Column(String(11), unique=True, nullable=False)
     address = Column(String, nullable=False)
     profile_picture_url = Column(String, nullable=True)
 
@@ -37,6 +40,7 @@ class Onboarding(Base):
     primary_goal = Column(String, nullable=False)
     pain_score = Column(Integer, nullable=False)
     preferred_schedule = Column(Integer, nullable=False)
+    custom_allowed_days = Column(ARRAY(Integer), nullable=True)
 
     user_id = Column(
         Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True

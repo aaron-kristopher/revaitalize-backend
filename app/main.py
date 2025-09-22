@@ -8,39 +8,45 @@ from app.features.users.routes import router as users_router
 from app.features.exercises.routes import router as exercise_router
 from app.features.sessions.routes import router as session_router
 from app.prediction.routes import router as prediction_router
+from app.auth_routes import router as auth_router
 from app.db.database import Base, engine
-from app.features.users.models import User, UserProblem, Onboarding
-from app.features.exercises.models import Exercise
-from app.features.sessions.models import (
-    Session,
-    SessionRequirement,
-    ExerciseSet,
-    Repetition,
-)
 
-_ = [
-    User,
-    UserProblem,
-    Onboarding,
-    Exercise,
-    Session,
-    SessionRequirement,
-    ExerciseSet,
-    Repetition,
-]
+# _ = [
+#     User,
+#     UserProblem,
+#     Onboarding,
+#     Exercise,
+#     Session,
+#     SessionRequirement,
+#     ExerciseSet,
+#     Repetition,
+# ]
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
+origins = [
+    "https://revaitalize.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-routers = [users_router, prediction_router, exercise_router, session_router]
+
+routers = [
+    auth_router,
+    users_router,
+    prediction_router,
+    exercise_router,
+    session_router,
+]
 
 os.makedirs("app/static/images", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
