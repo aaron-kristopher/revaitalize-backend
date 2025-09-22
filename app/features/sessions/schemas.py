@@ -14,6 +14,7 @@ class SessionRequirementBase(BaseModel):
 
 class SessionRequirementCreate(SessionRequirementBase):
     exercise_id: int
+    # user_id is now taken from the path, but leaving it here doesn't hurt
     user_id: int
 
 
@@ -38,8 +39,12 @@ class SessionRequirementUpdate(BaseModel):
 
 class RepetitionBase(BaseModel):
     rep_number: int
-    rep_quality_score: Optional[float]
-    error_flag: Optional[str]
+    rep_quality_score: Optional[float] = None
+    error_flag: Optional[str] = None
+    # --- FIX IS HERE ---
+    # Add the missing field to the base schema.
+    # It's optional and will be set to True by the CRUD function.
+    is_completed: Optional[bool] = None
 
 
 class RepetitionCreate(RepetitionBase):
@@ -49,7 +54,7 @@ class RepetitionCreate(RepetitionBase):
 class RepetitionOut(RepetitionBase):
     id: int
     set_id: int
-    is_completed: bool = True  # A rep is complete once logged
+    is_completed: bool  # is_completed is guaranteed in the output
 
     class Config:
         from_attributes = True
@@ -64,7 +69,6 @@ class ExerciseSetBase(BaseModel):
     set_number: int
 
 
-# Schema for CREATING a Set.
 class ExerciseSetCreate(ExerciseSetBase):
     pass
 

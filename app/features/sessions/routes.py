@@ -4,8 +4,6 @@ from sqlalchemy.orm import Session
 from typing import List
 from enum import Enum
 
-from starlette.status import HTTP_404_NOT_FOUND
-
 from app.db.database import get_db
 from . import crud, schemas
 from app.features.users import crud as users_crud
@@ -98,7 +96,7 @@ def update_user_session_requirement(
 
 
 @router.post(
-    "/{user-id}/sessions/start",
+    "/{user_id}/sessions/start",
     response_model=schemas.SessionOut,
     status_code=status.HTTP_201_CREATED,
 )
@@ -128,7 +126,7 @@ def start_new_session(
     )
 
 
-@router.put("/{user-id}/sessions/{session_id}/end", response_model=schemas.SessionOut)
+@router.put("/{user_id}/sessions/{session_id}/end", response_model=schemas.SessionOut)
 def end_exercise_session(
     session_id: int,
     user_id: int,
@@ -155,7 +153,7 @@ def end_exercise_session(
     return ended_session
 
 
-@router.get("/{user-id}/sessions/{session_id}", response_model=schemas.SessionOut)
+@router.get("/{user_id}/sessions/{session_id}", response_model=schemas.SessionOut)
 def get_session_details(session_id: int, user_id: int, db: Session = Depends(get_db)):
     """
 
@@ -180,10 +178,11 @@ class SessionTimeFilter(str, Enum):
     yesterday = "yesterday"
     this_week = "this_week"
     this_month = "this_month"
+    all_time = "all_time"
 
 
 @router.get(
-    "/{user_id}/sessions/{time_filter}", response_model=List[schemas.SessionOut]
+    "/{user_id}/sessions/filter/{time_filter}", response_model=List[schemas.SessionOut]
 )
 def get_user_sessions_by_time_range(
     user_id: int,
@@ -195,7 +194,9 @@ def get_user_sessions_by_time_range(
     """
     db_user = users_crud.get_user(db=db, user_id=user_id)
     if not db_user:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if time_filter == SessionTimeFilter.today:
         return crud.get_sessions_today(db, user_id)
@@ -205,10 +206,34 @@ def get_user_sessions_by_time_range(
         return crud.get_sessions_this_week(db, user_id)
     elif time_filter == SessionTimeFilter.this_month:
         return crud.get_sessions_this_month(db, user_id)
+    elif time_filter == SessionTimeFilter.all_time:
+        return crud.get_all_sessions(db, user_id)
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid time filter"
         )
+
+
+@router.get(
+    "/{user_id}/sessions/{session_id}/detail", response_model=schemas.SessionOut
+)
+def get_session_by_id(user_id: int, session_id: int, db: Session = Depends(get_db)):
+    db_user = users_crud.get_user(db=db, user_id=user_id)
+
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    db_session = crud.get_session_by_id(db=db, user_id=user_id, session_id=session_id)
+
+    if not db_session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session with id {session_id} does not exist",
+        )
+
+    return db_session
 
 
 # ==================================
@@ -279,7 +304,6 @@ def get_exercise_set(
 def update_exercise_set_details(
     set_id: int,
     user_id: int,
-    session_id: int,
     set_update: schemas.ExerciseSetUpdate,
     db: Session = Depends(get_db),
 ):
@@ -291,8 +315,6 @@ def update_exercise_set_details(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-
-    db_session = crud.get_session(db=db, session_id=session_id)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
@@ -346,10 +368,10 @@ def add_repetition_to_set(
     return crud.create_repetition(db=db, rep_create=rep_data, set_id=set_id)
 
 
-@router.get(
-    "/{user_id}/sessions/{session_id}/sets/{set_id}/repetitions/all"
-)
-def get_set_repetitions(user_id: int, session_id: int, set_id:int, db: Session = Depends(get_db)):
+@router.get("/{user_id}/sessions/{session_id}/sets/{set_id}/repetitions/all")
+def get_set_repetitions(
+    user_id: int, session_id: int, set_id: int, db: Session = Depends(get_db)
+):
     """
     Gets all the repetitions for a given set.
     """
@@ -375,11 +397,18 @@ def get_set_repetitions(user_id: int, session_id: int, set_id:int, db: Session =
 
     return crud.get_set_repetitions(db=db, set_id=set_id)
 
+
 @router.get(
     "/{user_id}/sessions/{session_id}/sets/{set_id}/repetitions/{repetition_id}",
     response_model=schemas.RepetitionOut,
 )
-def get_repetition(user_id: int, session_id: int, set_id: int, repetition_id: int, db: Session = Depends(get_db)):
+def get_repetition(
+    user_id: int,
+    session_id: int,
+    set_id: int,
+    repetition_id: int,
+    db: Session = Depends(get_db),
+):
     """
     Gets the repetition for a specific set in a given session.
     """
