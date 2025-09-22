@@ -26,7 +26,7 @@ app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
 origins = [
-    "https://revaitalize.vercel.app",
+    "https://revaitalize.space",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
