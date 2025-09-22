@@ -25,7 +25,11 @@ from app.db.database import Base, engine
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
-origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+origins = [
+    "https://revaitalize.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,
