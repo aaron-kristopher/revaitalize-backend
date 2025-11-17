@@ -1,7 +1,8 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Boolean, Float
 
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.db.database import Base
 
@@ -11,7 +12,7 @@ class Session(Base):
 
     id = Column(Integer, primary_key=True, nullable=False, index=True)
     datetime_start = Column(
-        DateTime, default=datetime.now(timezone.utc), nullable=False
+        DateTime, default=datetime.now(ZoneInfo("Asia/Manila")), nullable=False
     )
     datetime_end = Column(DateTime, nullable=True)
     is_completed = Column(Boolean, nullable=True)
