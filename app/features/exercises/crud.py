@@ -1,5 +1,36 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from . import models, schemas
+
+DEFAULT_EXERCISES = [
+    {"id": 1, "name": "Hiding Face"},
+    {"id": 2, "name": "Flank Stretch"},
+    {"id": 3, "name": "Torso Rotation"},
+]
+
+
+def seed_exercises(db: Session):
+    """
+    Ensures the default exercises exist with the expected IDs.
+    If an exercise with a given ID already exists, it is left untouched.
+    The caller manages the transaction (commit/rollback).
+    """
+    for exercise in DEFAULT_EXERCISES:
+        existing = (
+            db.query(models.Exercise)
+            .filter(models.Exercise.id == exercise["id"])
+            .first()
+        )
+        if existing:
+            continue
+        db.execute(
+            text(
+                "INSERT INTO exercises (id, name) VALUES (:id, :name) "
+                "ON CONFLICT (id) DO NOTHING"
+            ),
+            exercise,
+        )
+
 
 # --- READ ---
 

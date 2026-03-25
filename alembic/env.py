@@ -17,6 +17,7 @@ from app.features.sessions.models import (
     ExerciseSet,
     Repetition,
 )
+from app.features.exercises.crud import seed_exercises
 
 _ = [
     User,
@@ -97,6 +98,10 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
+        connection.commit()
+
+        seed_exercises(connection)
 
 
 if context.is_offline_mode():
